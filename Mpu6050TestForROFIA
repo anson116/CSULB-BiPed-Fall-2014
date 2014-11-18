@@ -1,0 +1,54 @@
+// MPU-6050 Short Example Sketch
+// By Arduino User JohnChi
+// August 17, 2014
+// Public Domain
+#include<Wire.h>
+
+const int MPU=0x68;  // I2C address of the MPU-6050
+const int accCenterPoint             = 0;     // The center point of the accelerometer sensor MPU-6050
+const int leftMinLean                = 1000;   // BiPed is pushed left by min force
+const int leftMidLean                = 2000;   // BiPed is pushed left by mid force
+const int rightMinLean               = -1000;  // BiPed is pushed right by min force
+const int rightMidLean               = -2000;  // BiPed is pushed right by mid force
+
+int16_t AcX;
+void setup(){
+  Wire.begin();
+  Wire.beginTransmission(MPU);
+  Wire.write(0x6B);  // PWR_MGMT_1 register
+  Wire.write(0);     // set to zero (wakes up the MPU-6050)
+  Wire.endTransmission(true);
+  Serial.begin(9600);
+}
+void loop(){
+  Wire.beginTransmission(MPU);
+  Wire.write(0x3B);  // starting with register 0x3B (ACCEL_XOUT_H)
+  Wire.endTransmission(false);
+  Wire.requestFrom(MPU,14,true);  // request a total of 14 registers
+  AcX=Wire.read()<<8|Wire.read();  // 0x3B (ACCEL_XOUT_H) & 0x3C (ACCEL_XOUT_L)     
+  
+  Serial.print("Accelerometer X = "); Serial.print(AcX); 
+  Serial.println(". ROFIA Leans Toward & the Amount of Force: ");  
+   // Balance the robot based on the force applied
+  if((AcX < 200) && (AcX > -200))
+    Serial.println("ROFIA Stands. No force is applied.");
+  else if(AcX >= 200)
+  {
+    if(AcX <= leftMinLean)
+      Serial.println("ROFIA leans left. Min force is applied.");
+    else if(AcX <= leftMidLean)
+      Serial.println("ROFIA leans left. Mid force is applied.");
+    else
+      Serial.println("ROFIA leans left. Max force is applied.");
+  }
+  else
+  {
+    if(AcX >= rightMinLean)
+      Serial.println("ROFIA leans right. Min force is applied.");
+    else if(AcX >= rightMidLean)
+      Serial.println("ROFIA leans right. Mid force is applied.");
+    else  
+      Serial.println("ROFIA leans right. Max force is applied.");
+  }
+  delay(333);
+}
